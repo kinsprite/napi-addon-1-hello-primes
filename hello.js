@@ -15,3 +15,6 @@ addon.generateNumbers(100, (n) => {
 });
 
 console.log(nums);
+
+console.log(addon.isPrime(5))
+console.log(addon.isPrime(121))

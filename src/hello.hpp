@@ -18,7 +18,7 @@ napi_value GenerateNumbers(napi_env env, napi_callback_info info);
 napi_value JoinStrings(napi_env env, napi_callback_info info);
 
 // long time job: isPrime(n: number).then((boolean) => void);
-napi_value IsPrimes(napi_env env, napi_callback_info info);
+napi_value IsPrime(napi_env env, napi_callback_info info);
 
 #ifdef __cplusplus
 // }

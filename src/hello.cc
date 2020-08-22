@@ -13,6 +13,7 @@ napi_value Init(napi_env env, napi_value exports) {
   napi_property_descriptor descArr[] = {
     DECLARE_NAPI_METHOD("generateNumbers", GenerateNumbers),
     DECLARE_NAPI_METHOD("joinStrings", JoinStrings),
+    DECLARE_NAPI_METHOD("isPrime", IsPrime),
   };
   status = napi_define_properties(env, exports, sizeof(descArr)/sizeof(descArr[0]), descArr);
   assert(status == napi_ok);
