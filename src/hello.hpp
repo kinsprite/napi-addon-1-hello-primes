@@ -11,6 +11,9 @@
 
 std::string value_to_string(napi_env env, napi_value value);
 
+// generateNumbers(n: number, callback: (v: number) => void)
+napi_value GenerateNumbers(napi_env env, napi_callback_info info);
+
 // short time job: join(arr: string[], sep: string)
 napi_value JoinStrings(napi_env env, napi_callback_info info);
 

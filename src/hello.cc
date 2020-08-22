@@ -10,8 +10,11 @@
 
 napi_value Init(napi_env env, napi_value exports) {
   napi_status status;
-  napi_property_descriptor desc = DECLARE_NAPI_METHOD("joinStrings", JoinStrings);
-  status = napi_define_properties(env, exports, 1, &desc);
+  napi_property_descriptor descArr[] = {
+    DECLARE_NAPI_METHOD("generateNumbers", GenerateNumbers),
+    DECLARE_NAPI_METHOD("joinStrings", JoinStrings),
+  };
+  status = napi_define_properties(env, exports, sizeof(descArr)/sizeof(descArr[0]), descArr);
   assert(status == napi_ok);
   return exports;
 }
