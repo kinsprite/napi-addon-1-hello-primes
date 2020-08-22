@@ -35,3 +35,4 @@ napi_value IsPrimes(napi_env env, napi_callback_info info) {
 
   return result;
 }
+

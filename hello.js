@@ -1,6 +1,17 @@
-var addon = require('bindings')('hello');
+const addon = require('bindings')('hello');
 
 // console.log(addon.hello()); // 'world'
 // console.log(addon);
 console.log(addon.joinStrings(['a', 'b', 'c'], '|'));
-addon.generateNumbers(10, console.log);
+
+let nums = "";
+
+addon.generateNumbers(100, (n) => {
+  if (nums.length) {
+    nums += ',';
+  }
+
+  nums += n;
+});
+
+console.log(nums);
