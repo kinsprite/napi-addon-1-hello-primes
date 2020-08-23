@@ -1,7 +1,7 @@
 {
-  "name": "hello_world",
+  "name": "hello_primes",
   "version": "1.0.0",
-  "description": "Node.js Addon #1 Hello",
+  "description": "Node.js Addon #1 Hello Primes",
   "main": "hello.js",
   "private": true,
   "dependencies": {
