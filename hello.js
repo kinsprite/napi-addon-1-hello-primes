@@ -16,5 +16,13 @@ addon.generateNumbers(100, (n) => {
 
 console.log(nums);
 
-console.log(addon.isPrime(5))
-console.log(addon.isPrime(121))
+[
+  1,
+  2,
+  39194 + 0xFFFF,
+  114713,
+  116447,
+  39194 + 0xFFFF + 6644668
+].forEach((n) => {
+  console.log(n, "is prime:", addon.isPrime(n));
+});

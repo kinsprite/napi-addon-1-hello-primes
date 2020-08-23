@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <node_api.h>
 
+#include <cstdio>
 #include <utility>
 #include <vector>
 #include <string>
@@ -22,9 +23,9 @@ class PrimeIter
     >
 {
 public:
-  PrimeIter(): n(0) {}
-  PrimeIter(IntType n_): n(n_) {}
-  PrimeIter(const PrimeIter &other): n(other.n) {}
+  PrimeIter(): n(0), primesExt(nullptr) {}
+  PrimeIter(IntType n_, const std::vector<IntType> *pExt = nullptr): n(n_), primesExt(pExt) {}
+  PrimeIter(const PrimeIter &other) = default;
 
 private:
   friend class boost::iterator_core_access;
@@ -48,11 +49,52 @@ private:
     return n - other.n;
   }
 
-  IntType dereference() const
-  { return boost::math::prime(n); }
+  IntType dereference() const {
+    IntType bpMax = boost::math::max_prime;
+
+    if (n <= bpMax) {
+      return boost::math::prime(n);
+    }
+
+    if (primesExt && n - bpMax <= primesExt->size()) {
+      return (*primesExt)[n - bpMax - 1];
+    }
+
+    return 0;
+  }
 
   IntType n;
+  const std::vector<IntType> *primesExt;
 };
+
+std::vector<uint32_t> GeneratePrimesExt(uint32_t extCount = 1000) {
+  std::vector<uint32_t> primesExt;
+  primesExt.reserve(extCount);
+
+  uint32_t maxN = boost::math::max_prime + extCount;
+
+  for (uint32_t i = boost::math::prime(boost::math::max_prime) + 1, n = boost::math::max_prime + 1;
+    n <= maxN;
+    i++) {
+    bool isPrimeNum = true;
+
+    for (uint32_t inner = 0; inner < n; inner++) {
+      uint32_t innerPrime = *PrimeIter<uint32_t>(inner, &primesExt);
+      if (i % innerPrime == 0) {
+        isPrimeNum = false;
+        break;
+      }
+    }
+
+    if (isPrimeNum) {
+      primesExt.push_back(i);
+      n++;
+      // std::printf("%d\n", i);
+    }
+  }
+
+  return std::move(primesExt);
+}
 
 // long time job: isPrime(n: number)
 napi_value IsPrime(napi_env env, napi_callback_info info) {
@@ -70,15 +112,23 @@ napi_value IsPrime(napi_env env, napi_callback_info info) {
   status = napi_get_value_int64(env, argv[0], &num);
   assert(status == napi_ok);
 
+  bool isTrue = false;
+
   if (num < boost::math::prime(0)) {
 
+  } else if (num <= boost::math::prime(boost::math::max_prime)) {
+    isTrue = std::binary_search(PrimeIter<uint32_t>(0), PrimeIter<uint32_t>(boost::math::max_prime + 1), num);
+  } else {
+    // Generate Primes ext
+    static auto primesExt = GeneratePrimesExt();
+    uint32_t maxPrimes = primesExt[primesExt.size() - 1];
+
+    if (num > maxPrimes) {
+      std::fprintf(stderr, "Input number (%d) is large than max prime supported (%d)\n", num, maxPrimes);
+    }
+
+    isTrue = std::binary_search(primesExt.begin(), primesExt.end(), num);
   }
-
-  if (num > boost::math::prime(boost::math::max_prime)) {
-
-  }
-
-  bool isTrue = std::binary_search(PrimeIter<uint32_t>(0), PrimeIter<uint32_t>(boost::math::max_prime + 1), num);
 
   status = napi_get_boolean(env, isTrue, &result);
   assert(status == napi_ok);
