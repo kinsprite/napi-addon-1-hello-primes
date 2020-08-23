@@ -34,5 +34,5 @@ console.log('----- IsPrimeAsync -----')
 checkedPrimes.forEach((n) => {
   addon.isPrimeAsync(n).then((result) => {
     console.log(n, "is prime:", result);
-  } )
-})
+  });
+});
