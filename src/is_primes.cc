@@ -105,8 +105,6 @@ std::vector<uint32_t> GeneratePrimesExt(uint32_t extCount = 1000) {
 }
 
 bool isPrimeInner(int64_t num) {
-  bool isTrue = false;
-
   if (num < boost::math::prime(0)) {
     return false;
   } else if (num <= boost::math::prime(boost::math::max_prime)) {
@@ -118,11 +116,12 @@ bool isPrimeInner(int64_t num) {
   uint32_t maxPrimes = primesExt[primesExt.size() - 1];
 
   if (num > maxPrimes) {
-    return false;
     std::fprintf(stderr, "Input number (%d) is large than max prime supported (%d)\n", num, maxPrimes);
   } else {
     return std::binary_search(primesExt.begin(), primesExt.end(), num);
   }
+
+  return false;
 }
 
 // long time job: isPrime(n: number) => boolean
