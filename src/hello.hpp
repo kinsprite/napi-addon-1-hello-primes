@@ -11,10 +11,10 @@
 
 std::string value_to_string(napi_env env, napi_value value);
 
-// generateNumbers(n: number, callback: (v: number) => void)
+// generateNumbers(n: number, callback: (v: number) => void): void
 napi_value GenerateNumbers(napi_env env, napi_callback_info info);
 
-// short time job: join(arr: string[], sep: string)
+// short time job: joinStrings(arr: string[], sep: string): string
 napi_value JoinStrings(napi_env env, napi_callback_info info);
 
 // long time job: isPrime(n: number) => boolean

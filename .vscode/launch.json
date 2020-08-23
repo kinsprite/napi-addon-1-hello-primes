@@ -8,7 +8,7 @@
             "name": "Node Native",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "node.exe",
+            "program": "node",
             "args": ["${workspaceFolder}"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
