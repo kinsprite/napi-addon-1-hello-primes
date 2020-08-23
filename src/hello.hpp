@@ -17,8 +17,12 @@ napi_value GenerateNumbers(napi_env env, napi_callback_info info);
 // short time job: join(arr: string[], sep: string)
 napi_value JoinStrings(napi_env env, napi_callback_info info);
 
-// long time job: isPrime(n: number).then((boolean) => void);
+// long time job: isPrime(n: number) => boolean
 napi_value IsPrime(napi_env env, napi_callback_info info);
+
+// long time job: isPrimeAsync(n: number).then((boolean) => void);
+napi_value IsPrimeAsync(napi_env env, napi_callback_info info);
+
 
 #ifdef __cplusplus
 // }

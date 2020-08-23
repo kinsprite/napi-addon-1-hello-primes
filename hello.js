@@ -16,13 +16,23 @@ addon.generateNumbers(100, (n) => {
 
 console.log(nums);
 
-[
+const checkedPrimes = [
   1,
   2,
   39194 + 0xFFFF,
   114713,
   116447,
   39194 + 0xFFFF + 6644668
-].forEach((n) => {
+];
+
+checkedPrimes.forEach((n) => {
   console.log(n, "is prime:", addon.isPrime(n));
 });
+
+console.log('----- IsPrimeAsync -----')
+
+checkedPrimes.forEach((n) => {
+  addon.isPrimeAsync(n).then((result) => {
+    console.log(n, "is prime:", result);
+  } )
+})

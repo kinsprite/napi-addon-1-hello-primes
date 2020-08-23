@@ -6,12 +6,20 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <memory>
 
 #include <algorithm>
 #include <boost/math/special_functions/prime.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "hello.hpp"
+
+typedef struct {
+  napi_async_work work;
+  napi_deferred deferred;
+  int64_t num;
+  bool result;
+} IsPrimeWorkData;
 
 template <typename IntType>
 class PrimeIter
@@ -96,7 +104,28 @@ std::vector<uint32_t> GeneratePrimesExt(uint32_t extCount = 1000) {
   return std::move(primesExt);
 }
 
-// long time job: isPrime(n: number)
+bool isPrimeInner(int64_t num) {
+  bool isTrue = false;
+
+  if (num < boost::math::prime(0)) {
+    return false;
+  } else if (num <= boost::math::prime(boost::math::max_prime)) {
+    return std::binary_search(PrimeIter<uint32_t>(0), PrimeIter<uint32_t>(boost::math::max_prime + 1), num);
+  }
+
+  // Generate Primes ext
+  static auto primesExt = GeneratePrimesExt();
+  uint32_t maxPrimes = primesExt[primesExt.size() - 1];
+
+  if (num > maxPrimes) {
+    return false;
+    std::fprintf(stderr, "Input number (%d) is large than max prime supported (%d)\n", num, maxPrimes);
+  } else {
+    return std::binary_search(primesExt.begin(), primesExt.end(), num);
+  }
+}
+
+// long time job: isPrime(n: number) => boolean
 napi_value IsPrime(napi_env env, napi_callback_info info) {
   napi_status status;
   napi_value result;
@@ -112,25 +141,97 @@ napi_value IsPrime(napi_env env, napi_callback_info info) {
   status = napi_get_value_int64(env, argv[0], &num);
   assert(status == napi_ok);
 
-  bool isTrue = false;
-
-  if (num < boost::math::prime(0)) {
-
-  } else if (num <= boost::math::prime(boost::math::max_prime)) {
-    isTrue = std::binary_search(PrimeIter<uint32_t>(0), PrimeIter<uint32_t>(boost::math::max_prime + 1), num);
-  } else {
-    // Generate Primes ext
-    static auto primesExt = GeneratePrimesExt();
-    uint32_t maxPrimes = primesExt[primesExt.size() - 1];
-
-    if (num > maxPrimes) {
-      std::fprintf(stderr, "Input number (%d) is large than max prime supported (%d)\n", num, maxPrimes);
-    }
-
-    isTrue = std::binary_search(primesExt.begin(), primesExt.end(), num);
-  }
+  bool isTrue = isPrimeInner(num);
 
   status = napi_get_boolean(env, isTrue, &result);
   assert(status == napi_ok);
   return result;
+}
+
+#define CHECK(expr) \
+  { \
+    if ((expr) == 0) { \
+      fprintf(stderr, "%s:%d: failed assertion `%s'\n", __FILE__, __LINE__, #expr); \
+      fflush(stderr); \
+      abort(); \
+    } \
+  }
+
+
+void IsPrimeExecuteWork(napi_env env, void* data) {
+  auto workData = (IsPrimeWorkData *) data;
+  workData->result = isPrimeInner(workData->num);
+}
+
+void IsPrimeWorkComplete(napi_env env, napi_status status, void* data) {
+  std::unique_ptr<IsPrimeWorkData> workData((IsPrimeWorkData *) data);
+
+  if (status != napi_ok) {
+    return;
+  }
+
+  napi_value result;
+
+  status = napi_get_boolean(env, workData->result, &result);
+  assert(status == napi_ok);
+
+  CHECK(napi_resolve_deferred(env, workData->deferred, result) == napi_ok);
+
+  // Clean up the work item associated with this run.
+  CHECK(napi_delete_async_work(env, workData->work) == napi_ok);
+
+  // Set both values to NULL so JavaScript can order a new run of the thread.
+  workData->work = NULL;
+  workData->deferred = NULL;
+}
+
+// long time job: isPrimeAsync(n: number).then((boolean) => void);
+napi_value IsPrimeAsync(napi_env env, napi_callback_info info) {
+  napi_value work_name;
+  napi_value promise;
+  napi_status status;
+
+  // Input args
+  size_t argc = 1;
+  napi_value argv[1];
+
+  status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+  assert(status == napi_ok);
+
+  int64_t num = 0;
+  status = napi_get_value_int64(env, argv[0], &num);
+  assert(status == napi_ok);
+
+  std::unique_ptr<IsPrimeWorkData> workData(new IsPrimeWorkData());
+  workData->num = num;
+  workData->result = false;
+
+  // Create a string to describe this asynchronous operation.
+  CHECK(napi_create_string_utf8(env,
+                                 "N-API Deferred Promise from IsPrimeAsync",
+                                 NAPI_AUTO_LENGTH,
+                                 &work_name) == napi_ok);
+
+  // Create a deferred promise which we will resolve at the completion of the work.
+  CHECK(napi_create_promise(env,
+                             &(workData->deferred),
+                             &promise) == napi_ok);
+
+  // Create an async work item, passing in the addon data, which will give the
+  // worker thread access to the above-created deferred promise.
+  CHECK(napi_create_async_work(env,
+                                NULL,
+                                work_name,
+                                IsPrimeExecuteWork,
+                                IsPrimeWorkComplete,
+                                workData.get(),
+                                &(workData->work)) == napi_ok);
+
+  // Queue the work item for execution.
+  CHECK(napi_queue_async_work(env, workData->work) == napi_ok);
+
+  workData.release();
+
+  // This causes created `promise` to be returned to JavaScript.
+  return promise;
 }
